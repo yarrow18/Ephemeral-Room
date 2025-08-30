@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'self'; connect-src 'self' ws: wss:; img-src 'self' blob: data:;
+       style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none';
+       base-uri 'none'; frame-ancestors 'none'">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+<title>Ephemeral Room</title>
+<style>
+:root{
+  --bg:#0a0a0f; --panel:#111118; --panel2:#151521; --hi:#ff3040; --hi2:#d51f2e; --ok:#13d18e;
+  --fg:#e9e9f4; --muted:#b8b8d9; --border:#26263a; --input:#0e0e16;
+}
+*{box-sizing:border-box}
+body{font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:
+radial-gradient(1200px 600px at 20% -10%, #1a0f12 0%, transparent 60%), var(--bg); color:var(--fg)}
+header{padding:16px 20px;background:linear-gradient(90deg,#150b0e,#0d0d13);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--hi);box-shadow:0 0 12px var(--hi);transition:all .2s}
+.dot.ok{background:var(--ok); box-shadow:0 0 12px var(--ok)}
+h1{font-size:18px;margin:0;letter-spacing:.4px}
+
+main{padding:22px;max-width:1100px;margin:0 auto;display:grid;gap:16px}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:16px;padding:16px;
+      box-shadow:0 0 0 1px rgba(255,48,64,0.03), 0 18px 40px rgba(0,0,0,0.35)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.col-4{grid-column:span 4} .col-5{grid-column:span 5} .col-3{grid-column:span 3}
+label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+input[type=text],input[type=password]{background:var(--input);border:1px solid var(--border);border-radius:12px;color:var(--fg);
+  padding:12px 14px;outline:none;transition:border .15s, box-shadow .15s}
+input:focus{border-color:#3a4270; box-shadow:0 0 0 3px rgba(255,48,64,.15)}
+input.err{border-color:var(--hi); box-shadow:0 0 0 3px rgba(255,48,64,.25)}
+button{background:linear-gradient(180deg,var(--hi),var(--hi2));border:none;border-radius:12px;padding:11px 16px;color:#fff;cursor:pointer;
+  font-weight:700;letter-spacing:.2px;box-shadow:0 6px 18px rgba(255,48,64,.28);transition:transform .05s}
+button:hover{transform:translateY(-1px)}
+button.secondary{background:#1b1b2b;box-shadow:none}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#20131a;border:1px solid #46212a;color:#ff9aa4}
+.badge.sas{background:#1a1011;border-color:#4a1f27}
+small{color:var(--muted)}
+
+.chat{position:relative;display:flex;flex-direction:column;height:60vh;min-height:420px}
+#msgs{flex:1 1 auto;overflow:auto;background:var(--input);border:1px solid var(--border);border-radius:12px;padding:14px}
+.footer{position:sticky;bottom:0;display:flex;gap:10px;align-items:center;background:transparent;margin-top:12px}
+.footer input[type=text]{flex:1 1 auto}
+.lock{
+  position:absolute;inset:0;border-radius:12px;background:rgba(12,12,20,.66);
+  border:1px dashed #3a3a55;display:flex;align-items:center;justify-content:center;pointer-events:auto;
+}
+.lock .msg{opacity:.95;padding:10px 14px;border-radius:10px;border:1px solid #3a3a55;background:#0f0f19}
+.msg{max-width:72%;padding:10px 12px;border-radius:14px;line-height:1.35;margin:6px 0;position:relative}
+.msg .meta{font-size:11px;color:#9aa0c6;margin-bottom:4px}
+.msg.l{align-self:flex-start;background:#0e1124;border:1px solid #22294b;border-top-left-radius:6px}
+.msg.r{align-self:flex-end;background:#1e233e;border:1px solid #2b3a6a;border-top-right-radius:6px}
+.msg .file{display:flex;align-items:center;gap:8px;margin-top:6px}
+.link{background:#0f162f;border:1px solid #2a3a6b;border-radius:10px;color:#cfe0ff;padding:6px 10px;text-decoration:none}
+.link:hover{filter:brightness(1.1)}
+.hint{font-size:12px;color:#b9b9d6;margin-top:8px}
+</style>
+
+<!-- ===== Mobile-first tweaks (responsive) ===== -->
+<style>
+  :root{ --tap:44px; --gap:12px; }
+  button, input[type=text], input[type=password]{ min-height:var(--tap); }
+
+  /* iOS keyboard / small viewports */
+  .chat{ height:min(62svh,68dvh); }
+  .footer{ padding-bottom:env(safe-area-inset-bottom,0); flex-wrap:wrap; }
+  #fileName{ max-width:40ch; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Tablet */
+  @media (max-width:992px){
+    main{ max-width:900px; padding:18px; }
+  }
+
+  /* Mobile */
+  @media (max-width:720px){
+    header{ padding:14px 16px; }
+    h1{ font-size:16px; }
+    main{ padding:14px; }
+    .grid{ grid-template-columns:1fr; }
+    .col-4,.col-5,.col-3{ grid-column:span 12; }
+
+  /* Grouped buttons if narrow */
+    .card > div[style*="display:flex"]{ gap:var(--gap); flex-wrap:wrap; }
+    .card > div[style*="display:flex"] > button{ flex:1 1 auto; }
+
+  /* Higher chat area */
+    .chat{ height:min(70svh,76dvh); min-height:380px; }
+    #msgs{ padding:12px; }
+    .footer{ gap:8px; }
+    .footer button, .footer input[type=text]{ flex:1 1 auto; }
+    #sendFile{ flex:0 0 auto; }
+  }
+</style>
+<header><span id="statusDot" class="dot"></span><h1>Ephemeral Room</h1></header>
+
+
+<main>
+  <!-- Setup -->
+  <section class="card">
+    <div class="grid">
+      <label class="col-4">Room ID
+        <input id="room" type="text" placeholder="e.g. crew-42">
+      </label>
+      <label class="col-5">Passphrase (never leaves your browser)
+        <input id="pass" type="password" placeholder="e.g. long secret phrase">
+      </label>
+      <label class="col-3">Nickname
+        <input id="nick" type="text" placeholder="user-1234">
+      </label>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap">
+      <button id="create">Create Room</button>
+      <button id="join" class="secondary">Join Room</button>
+      <span id="presence" class="badge" style="display:none">Present: 0</span>
+      <span id="sas" class="badge sas" title="Safety code for out-of-band verification" style="display:none">SAS: ——</span>
+      <small>Key derived locally (PBKDF2→AES-256-GCM). Compare the <b>Safety Code</b> with others.</small>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button id="clearAll" class="danger" title="Clear for everyone" style="display:none">Clear</button>
+        <button id="quit" class="secondary" title="Leave the room" style="display:none">Quit</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chat -->
+  <section class="card chat">
+    <div id="msgs"></div>
+
+    <!-- overlay lock: visible while not connected -->
+    <div id="lock" class="lock" style="display:flex">
+      <div class="msg">🔒 Connect to a room to chat and send files.</div>
+    </div>
+
+    <div class="footer">
+  <input id="text" type="text" placeholder="Encrypted message..." disabled>
+  <button id="send" disabled>Send</button>
+  <input id="file" type="file" style="display:none" disabled>
+  <button id="chooseFile" class="secondary" disabled>Choose File</button>
+  <span id="fileName" style="color:#b9b9d6;font-size:13px;margin-left:6px"></span>
+  <button id="sendFile" class="secondary" disabled>Send file</button>
+    </div>
+    <div class="hint">Files are ephemeral (local links auto-expire). No server storage.</div>
+  </section>
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="/client.js"></script>

@@ -1,0 +1,14 @@
+{
+  "name": "ephemeral-room",
+  "version": "1.0.0",
+  "description": "E2EE chat + file share (WebRTC DC + Socket.IO), ephemeral rooms with auto-purge",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}
