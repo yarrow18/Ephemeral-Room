@@ -3,12 +3,16 @@
 A privacy-focused, ephemeral chat and file sharing app using end-to-end encryption and WebRTC peer-to-peer channels. No server-side storage, no tracking, and strong security by default.
 
 ## Features
-- End-to-end encrypted messages and files
-- Peer-to-peer (WebRTC) direct transfer when possible
-- Fallback encrypted relay via server (no storage)
-- Ephemeral file links (auto-expire locally)
-- No account, no tracking, no clear metadata
-- Modern UI, mobile-friendly
+End-to-end encrypted messages and files
+Peer-to-peer (WebRTC) direct transfer when possible
+Fallback encrypted relay via server (no storage)
+Ephemeral file links (auto-expire locally)
+No account, no tracking, no clear metadata
+Modern UI, mobile-friendly
+
+## Screenshots
+![Screenshot 1](screen/Screen1.png)
+![Screenshot 2](screen/Screen2.png)
 
 ## Security
 - All messages and files are encrypted in the browser using AES-256-GCM
